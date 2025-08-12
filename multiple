@@ -1,0 +1,96 @@
+// app/page.tsx
+import Link from "next/link"
+
+export default function IndexPage() {
+return (
+  <div className="min-h-screen flex items-center justify-center p-6">
+    <div className="w-full max-w-sm rounded-2xl border bg-background p-6 shadow-sm">
+      <h1 className="text-lg font-semibold">Mabe — EV Charging Demo</h1>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Demo 100% local. Selecciona una sección para comenzar.
+      </p>
+      <div className="mt-4 grid gap-2">
+        <Link href="/home" className="h-11 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
+          Inicio
+        </Link>
+        <div className="grid grid-cols-2 gap-2">
+          <Link href="/map" className="h-10 rounded-lg border flex items-center justify-center">
+            Mapa
+          </Link>
+          <Link href="/schedule" className="h-10 rounded-lg border flex items-center justify-center">
+            Agenda
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <Link href="/ops" className="h-10 rounded-lg border flex items-center justify-center">
+            Ops
+          </Link>
+          <Link href="/more" className="h-10 rounded-lg border flex items-center justify-center">
+            Más
+          </Link>
+        </div>
+        <Link href="/reset" className="h-10 rounded-lg flex items-center justify-center text-xs text-muted-foreground hover:underline">
+          Reset de datos (seguro)
+        </Link>
+      </div>
+      <p className="mt-3 text-[11px] text-muted-foreground">
+        Sugerencia: usa Inicio → “Reserva rápida” para crear una reserva confirmada.
+      </p>
+    </div>
+  </div>
+)
+}
+
+// components/energy-dashboard.tsx
+"use client"
+
+import { useMemo } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useAppStore } from "@/store/use-store"
+import {
+AreaChart,
+Area,
+CartesianGrid,
+XAxis,
+YAxis,
+Tooltip,
+ResponsiveContainer,
+} from "recharts"
+
+export function ChartEnergy() {
+const siteId = useAppStore((s) => s.ui.currentSiteId)
+const sessions = useAppStore((s) => s.sessions.filter((x) => x.siteId === siteId && x.status === "active"))
+const cap = useAppStore((s) => s.energyPolicies.find((p) => p.siteId === siteId)?.capKW ?? 80)
+const renewable = useAppStore((s) => s.sites.find((ss) => ss.id === siteId)?.renewablePercent ?? 35)
+
+const data = useMemo(() => {
+  // Simulación simple: 12 puntos de 5 min
+  return new Array(12).fill(0).map((_, i) => {
+    const base = Math.max(0, sessions.length * 10 + (i % 5) * 3)
+    return { t: `${i * 5}m`, load: Math.min(base, cap), cap }
+  })
+}, [sessions.length, cap])
+
+return (
+  <Card className="rounded-2xl">
+    <CardHeader className="pb-2">
+      <CardTitle className="text-base">Energía · Carga vs Cap</CardTitle>
+    </CardHeader>
+    <CardContent>
+      <div className="h-[220px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={data}>
+            <CartesianGrid vertical={false} strokeDasharray="3 3" />
+            <XAxis dataKey="t" tickLine={false} axisLine={false} tickMargin={8} />
+            <YAxis hide />
+            <Tooltip />
+            <Area dataKey="cap" fill="hsl(var(--muted))" stroke="hsl(var(--muted-foreground))" fillOpacity={0.25} />
+            <Area dataKey="load" fill="hsl(var(--primary))" stroke="hsl(var(--primary))" fillOpacity={0.35} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="mt-2 text-xs text-muted-foreground">Renovable estimado: {renewable}%</div>
+    </CardContent>
+  </Card>
+)
+}

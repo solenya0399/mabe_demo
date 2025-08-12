@@ -1,0 +1,10 @@
+export type Role =
+  | "Driver"
+  | "Operator"
+  | "Site Manager"
+  | "Admin-lite"
+  | "Technician"
+  | "Finance"
+  | "Security"
+  | "Auditor"
+  | "Guest"
